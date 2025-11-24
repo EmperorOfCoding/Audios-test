@@ -416,6 +416,40 @@
             box-shadow: 0 0 0 1px rgba(125, 243, 255, 0.3);
             color: var(--accent);
         }
+
+        .pomodoro-meta {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 12px 0 4px;
+        }
+
+        .pill-strong {
+            background: rgba(125, 243, 255, 0.12);
+            color: var(--accent);
+            border: 1px solid rgba(125, 243, 255, 0.25);
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-weight: 800;
+            letter-spacing: 0.4px;
+        }
+
+        .pill-ghost {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: var(--muted);
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-weight: 700;
+        }
+
+        .timer-secondary-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -539,10 +573,17 @@
                     <div class="timer-progress" aria-hidden="true">
                         <div class="fill" id="timerFill"></div>
                     </div>
+                    <div class="pomodoro-meta">
+                        <span class="pill-strong" id="currentPhase">Ciclo de foco</span>
+                        <span class="pill-ghost">Ciclo <span id="cycleCount">1</span> • Próximo: <span id="nextStage">Pausa curta</span></span>
+                    </div>
                     <div class="timer-status" id="timerStatus">Pronto para começar</div>
                     <div class="timer-controls">
                         <button class="btn btn-primary" id="timerToggle">Iniciar</button>
                         <button class="btn btn-ghost" id="timerReset">Resetar</button>
+                    </div>
+                    <div class="timer-secondary-actions">
+                        <button class="mode-btn" id="timerSkip" aria-label="Pular para a próxima etapa">Pular etapa</button>
                     </div>
                 </div>
                 <div class="card">
@@ -550,10 +591,10 @@
                     <h3>Customizar sessão</h3>
                     <p class="subtitle small">Selecione o bloco de tempo ideal e sincronize com as trilhas em reprodução.</p>
                     <div class="mode-group" role="group" aria-label="Modos de pomodoro">
-                        <button class="mode-btn active" data-minutes="25" data-label="Foco">Foco 25'</button>
-                        <button class="mode-btn" data-minutes="45" data-label="Foco profundo">Foco 45'</button>
-                        <button class="mode-btn" data-minutes="15" data-label="Pausa ativa">Pausa 15'</button>
-                        <button class="mode-btn" data-minutes="5" data-label="Micro pausa">Pausa 5'</button>
+                        <button class="mode-btn active" data-minutes="25" data-label="Foco" data-type="focus">Foco 25'</button>
+                        <button class="mode-btn" data-minutes="45" data-label="Foco profundo" data-type="focus">Foco 45'</button>
+                        <button class="mode-btn" data-minutes="15" data-label="Pausa longa" data-type="long-break">Pausa 15'</button>
+                        <button class="mode-btn" data-minutes="5" data-label="Pausa curta" data-type="short-break">Pausa 5'</button>
                     </div>
                 </div>
             </div>
@@ -607,14 +648,23 @@
         const timerStatus = document.getElementById('timerStatus');
         const timerToggle = document.getElementById('timerToggle');
         const timerReset = document.getElementById('timerReset');
+        const timerSkip = document.getElementById('timerSkip');
         const modeButtons = document.querySelectorAll('.mode-btn');
         const timerFill = document.getElementById('timerFill');
+        const cycleCount = document.getElementById('cycleCount');
+        const nextStage = document.getElementById('nextStage');
+        const currentPhase = document.getElementById('currentPhase');
 
         let currentAudio = null;
         let timerInterval = null;
         let timerRemaining = 25 * 60;
         let timerTotal = 25 * 60;
         let timerRunning = false;
+        let stageType = 'focus';
+        let cyclesCompleted = 0;
+        let lastFocus = { minutes: 25, label: 'Foco' };
+        let shortBreakMinutes = 5;
+        let longBreakMinutes = 15;
 
         function formatTime(seconds) {
             const m = String(Math.floor(seconds / 60)).padStart(2, '0');
@@ -634,7 +684,30 @@
             updateProgress();
         }
 
-        function setMode(minutes, label) {
+        function describeNextStage() {
+            if (stageType === 'focus') {
+                const isLongBreak = cyclesCompleted > 0 && cyclesCompleted % 4 === 0;
+                const minutes = isLongBreak ? longBreakMinutes : shortBreakMinutes;
+                return {
+                    minutes,
+                    label: isLongBreak ? 'Pausa longa' : 'Pausa curta',
+                    type: 'break',
+                };
+            }
+
+            return { minutes: lastFocus.minutes, label: lastFocus.label, type: 'focus' };
+        }
+
+        function updateCycleMeta() {
+            const upcoming = describeNextStage();
+            const currentCycle = stageType === 'focus' ? cyclesCompleted + 1 : cyclesCompleted;
+            cycleCount.textContent = currentCycle;
+            nextStage.textContent = `${upcoming.label}`;
+            currentPhase.textContent = stageType === 'focus' ? 'Ciclo de foco' : 'Momento de pausa';
+        }
+
+        function setMode(minutes, label, type = 'focus') {
+            stageType = type;
             timerTotal = minutes * 60;
             timerRemaining = timerTotal;
             timerLabel.textContent = label;
@@ -642,6 +715,7 @@
             timerToggle.textContent = 'Iniciar';
             timerRunning = false;
             clearInterval(timerInterval);
+            updateCycleMeta();
         }
 
         function stopCurrent() {
@@ -718,14 +792,25 @@
             };
             next();
         });
-
         modeButtons.forEach((btn) => {
             btn.addEventListener('click', () => {
                 modeButtons.forEach((b) => b.classList.remove('active'));
                 btn.classList.add('active');
                 const minutes = Number(btn.dataset.minutes);
                 const label = btn.dataset.label;
-                setMode(minutes, label);
+                const type = btn.dataset.type || 'focus';
+
+                if (type === 'focus') {
+                    lastFocus = { minutes, label };
+                }
+                if (type === 'short-break') {
+                    shortBreakMinutes = minutes;
+                }
+                if (type === 'long-break') {
+                    longBreakMinutes = minutes;
+                }
+
+                setMode(minutes, label, type === 'focus' ? 'focus' : 'break');
             });
         });
 
@@ -740,7 +825,8 @@
 
             if (timerRemaining <= 0) {
                 const active = document.querySelector('.mode-btn.active');
-                setMode(Number(active.dataset.minutes), active.dataset.label);
+                const activeType = active.dataset.type || 'focus';
+                setMode(Number(active.dataset.minutes), active.dataset.label, activeType === 'focus' ? 'focus' : 'break');
             }
 
             timerRunning = true;
@@ -754,8 +840,16 @@
                     timerRemaining = 0;
                     timerRunning = false;
                     timerToggle.textContent = 'Reiniciar';
+
+                    if (stageType === 'focus') {
+                        cyclesCompleted += 1;
+                    }
+
                     updateTimerDisplay('Tempo encerrado — faça uma pausa!');
                     timerFill.style.width = '100%';
+
+                    const upcoming = describeNextStage();
+                    setMode(upcoming.minutes, upcoming.label, upcoming.type);
                     return;
                 }
                 updateTimerDisplay();
@@ -766,12 +860,22 @@
             const active = document.querySelector('.mode-btn.active');
             const minutes = Number(active.dataset.minutes);
             const label = active.dataset.label;
-            setMode(minutes, label);
+            const type = active.dataset.type || 'focus';
+            setMode(minutes, label, type === 'focus' ? 'focus' : 'break');
+        });
+
+        timerSkip.addEventListener('click', () => {
+            const upcoming = describeNextStage();
+            if (stageType === 'focus') {
+                cyclesCompleted += 1;
+            }
+            setMode(upcoming.minutes, upcoming.label, upcoming.type);
         });
 
         const activeStart = document.querySelector('.mode-btn.active');
         if (activeStart) {
-            setMode(Number(activeStart.dataset.minutes), activeStart.dataset.label);
+            const startingType = activeStart.dataset.type || 'focus';
+            setMode(Number(activeStart.dataset.minutes), activeStart.dataset.label, startingType === 'focus' ? 'focus' : 'break');
         }
     </script>
 </body>
