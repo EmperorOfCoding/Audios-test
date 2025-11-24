@@ -1,47 +1,778 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
-    <title>FocusWave - Biblioteca de Áudios</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FocusWave.fm | Fork do brain.fm</title>
     <style>
+        :root {
+            --bg: #060815;
+            --panel: #0e1224;
+            --panel-2: #121936;
+            --accent: #7df3ff;
+            --accent-2: #c084fc;
+            --text: #e8edff;
+            --muted: #b4bfd6;
+            --danger: #ff6b6b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background: #121212;
-            color: #fff;
-            padding: 20px;
+            margin: 0;
+            font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+            background: radial-gradient(circle at 20% 20%, rgba(125, 243, 255, 0.12), transparent 25%),
+                radial-gradient(circle at 80% 0%, rgba(192, 132, 252, 0.12), transparent 30%),
+                var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .shell {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 28px 20px 120px;
+        }
+
+        header.hero {
+            background: linear-gradient(135deg, rgba(125, 243, 255, 0.08), rgba(192, 132, 252, 0.14));
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 40% 30%, rgba(125, 243, 255, 0.35), transparent 30%),
+                radial-gradient(circle at 70% 60%, rgba(192, 132, 252, 0.35), transparent 32%);
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+        }
+
+        .brand .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            box-shadow: 0 0 15px rgba(125, 243, 255, 0.6);
         }
 
         h1 {
-            color: #00e0ff;
+            font-size: clamp(28px, 4vw, 42px);
+            margin: 14px 0 10px;
+            line-height: 1.2;
         }
 
-        .audio-item {
-            margin-bottom: 25px;
-            padding: 10px;
-            background: #1e1e1e;
-            border-radius: 6px;
+        .subtitle {
+            color: var(--muted);
+            font-size: 16px;
+            max-width: 760px;
+            line-height: 1.6;
         }
 
-        audio {
-            width: 100%;
+        .cta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-size: 15px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #0b1021;
+            box-shadow: 0 10px 30px rgba(125, 243, 255, 0.25);
+        }
+
+        .btn-ghost {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .pill-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .pill {
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 999px;
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        section {
+            margin-top: 28px;
+        }
+
+        section h2 {
+            margin: 0 0 10px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            background: var(--panel);
+            border-radius: 14px;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+            position: relative;
+        }
+
+        .card h3 {
+            margin: 10px 0 6px;
+        }
+
+        .card .subtitle.small {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(125, 243, 255, 0.1);
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .tag::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 12px rgba(125, 243, 255, 0.6);
+        }
+
+        .meta {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            color: var(--muted);
+            font-size: 13px;
+            margin: 6px 0 12px;
+        }
+
+        .meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .meta .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-2);
+            box-shadow: 0 0 10px rgba(192, 132, 252, 0.6);
+        }
+
+        .play-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .play-btn {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: #0b1021;
+            font-weight: 900;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(125, 243, 255, 0.3);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s ease;
+        }
+
+        .play-btn:active {
+            transform: translateY(1px);
+        }
+
+        .wave {
+            display: flex;
+            gap: 3px;
+        }
+
+        .wave span {
+            width: 4px;
+            height: 12px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.5);
+            animation: pulse 1s ease-in-out infinite;
+            opacity: 0.6;
+        }
+
+        .wave span:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .wave span:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        @keyframes pulse {
+            0%,
+            100% {
+                transform: scaleY(0.6);
+            }
+            50% {
+                transform: scaleY(1.2);
+            }
+        }
+
+        .now-playing {
+            margin-top: 18px;
+            background: var(--panel-2);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 14px 16px;
+            display: flex;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--danger);
+            box-shadow: 0 0 12px rgba(255, 107, 107, 0.5);
+        }
+
+        .indicator.active {
+            background: #2ef28b;
+            box-shadow: 0 0 12px rgba(46, 242, 139, 0.6);
+        }
+
+        .np-text {
+            line-height: 1.4;
+        }
+
+        .np-label {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        footer {
+            margin-top: 28px;
+            color: var(--muted);
+            text-align: center;
+            font-size: 14px;
+        }
+
+        @media (max-width: 640px) {
+            .play-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .now-playing {
+            flex-direction: column;
+            align-items: flex-start;
+            }
+        }
+
+        .pomodoro {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            align-items: center;
+        }
+
+        .timer-display {
+            background: radial-gradient(circle at 30% 20%, rgba(125, 243, 255, 0.1), transparent 30%),
+                radial-gradient(circle at 70% 80%, rgba(192, 132, 252, 0.12), transparent 30%),
+                var(--panel);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .timer-display h3 {
+            margin-bottom: 6px;
+        }
+
+        .timer-time {
+            font-size: clamp(42px, 8vw, 64px);
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin: 6px 0 10px;
+        }
+
+        .timer-status {
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .timer-progress {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 999px;
+            overflow: hidden;
+            margin: 12px 0 10px;
+        }
+
+        .timer-progress .fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+            box-shadow: 0 6px 20px rgba(125, 243, 255, 0.3);
+            transition: width 0.3s ease;
+        }
+
+        .timer-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .timer-controls button {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .mode-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text);
+            padding: 10px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .mode-btn.active {
+            border-color: rgba(125, 243, 255, 0.8);
+            box-shadow: 0 0 0 1px rgba(125, 243, 255, 0.3);
+            color: var(--accent);
         }
     </style>
 </head>
-
 <body>
+    <div class="shell">
+        <header class="hero">
+            <div class="hero-content">
+                <div class="brand"><span class="dot"></span>FocusWave.fm</div>
+                <h1>Concentre-se em minutos com paisagens sonoras guiadas.</h1>
+                <p class="subtitle">
+                    Um fork inspirado no brain.fm: sessões curtas, trilhas binaurais e ruídos naturais para foco,
+                    criatividade ou relaxamento. Escolha uma faixa e comece a trabalhar.
+                </p>
+                <div class="pill-group">
+                    <span class="pill">⏱️ Sessões de 25 ou 45 min</span>
+                    <span class="pill">🎧 Otimizado para fones</span>
+                    <span class="pill">🌧️ Sons naturais + binaural</span>
+                </div>
+                <div class="cta">
+                    <button class="btn btn-primary" id="focusSession">Iniciar foco imediato</button>
+                    <button class="btn btn-ghost" id="autoPlaylist">Reproduzir playlist automática</button>
+                </div>
+            </div>
+        </header>
 
-    <h1>🎧 Biblioteca de Áudios - FocusWave</h1>
-    <p>Use este repositório para armazenar e testar seus arquivos MP3.</p>
-    <hr>
+        <section>
+            <h2>Trilhas recomendadas</h2>
+            <div class="grid">
+                <article class="card" data-src="audios/rain_binaural.mp3" data-title="Chuva Binaural" data-mood="Foco profundo" data-duration="25:00">
+                    <span class="tag">Foco</span>
+                    <h3>Chuva Binaural</h3>
+                    <p class="subtitle">Camadas suaves de chuva e ondas alfa para manter o fluxo sem distrações.</p>
+                    <div class="meta">
+                        <span><span class="dot"></span> Binaural</span>
+                        <span><span class="dot"></span> Ambiente aquático</span>
+                        <span><span class="dot"></span> 25 min</span>
+                    </div>
+                    <div class="play-row">
+                        <button class="play-btn" aria-label="Tocar Chuva Binaural">▶</button>
+                        <div class="wave" aria-hidden="true">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                </article>
 
-    <!-- Exemplo de áudio -->
-    <div class="audio-item">
-        <p><strong>Exemplo:</strong> focus_alpha.mp3</p>
-        <audio controls src="audio/focus_alpha.mp3"></audio>
+                <article class="card" data-src="audios/birds.mp3" data-title="Mata Atlântica" data-mood="Criatividade" data-duration="20:00">
+                    <span class="tag">Flow</span>
+                    <h3>Mata Atlântica</h3>
+                    <p class="subtitle">Pássaros e vento leve para momentos de escrita ou brainstorming.</p>
+                    <div class="meta">
+                        <span><span class="dot"></span> Tons naturais</span>
+                        <span><span class="dot"></span> Ideal para fones abertos</span>
+                        <span><span class="dot"></span> 20 min</span>
+                    </div>
+                    <div class="play-row">
+                        <button class="play-btn" aria-label="Tocar Mata Atlântica">▶</button>
+                        <div class="wave" aria-hidden="true">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="card" data-src="audios/trainTripSounds.mp3" data-title="Trem Noturno" data-mood="Estudo" data-duration="30:00">
+                    <span class="tag">Estabilidade</span>
+                    <h3>Trem Noturno</h3>
+                    <p class="subtitle">O ritmo constante dos trilhos cria um campo sonoro que mantém a mente no trilho.</p>
+                    <div class="meta">
+                        <span><span class="dot"></span> Ruído marrom</span>
+                        <span><span class="dot"></span> Sem falas</span>
+                        <span><span class="dot"></span> 30 min</span>
+                    </div>
+                    <div class="play-row">
+                        <button class="play-btn" aria-label="Tocar Trem Noturno">▶</button>
+                        <div class="wave" aria-hidden="true">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="card" data-src="audios/bowlSoundsmetal.mp3" data-title="Tigelas Tibetanas" data-mood="Relaxamento" data-duration="15:00">
+                    <span class="tag">Relax</span>
+                    <h3>Tigelas Tibetanas</h3>
+                    <p class="subtitle">Harmônicos metálicos com decay longo para diminuir o ritmo cardíaco.</p>
+                    <div class="meta">
+                        <span><span class="dot"></span> Harmônicos</span>
+                        <span><span class="dot"></span> Ideal para respiração 4-7-8</span>
+                        <span><span class="dot"></span> 15 min</span>
+                    </div>
+                    <div class="play-row">
+                        <button class="play-btn" aria-label="Tocar Tigelas Tibetanas">▶</button>
+                        <div class="wave" aria-hidden="true">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="card" data-src="audios/dancaDodragaoChines.mp3" data-title="Dança do Dragão" data-mood="Energia" data-duration="12:00">
+                    <span class="tag">Energizar</span>
+                    <h3>Dança do Dragão</h3>
+                    <p class="subtitle">Percussões ritualísticas para elevar a energia antes de uma sessão de foco.</p>
+                    <div class="meta">
+                        <span><span class="dot"></span> Batidas lentas</span>
+                        <span><span class="dot"></span> 70 BPM</span>
+                        <span><span class="dot"></span> 12 min</span>
+                    </div>
+                    <div class="play-row">
+                        <button class="play-btn" aria-label="Tocar Dança do Dragão">▶</button>
+                        <div class="wave" aria-hidden="true">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section>
+            <h2>Timer Pomodoro</h2>
+            <div class="pomodoro">
+                <div class="timer-display">
+                    <h3 id="timerLabel">Foco</h3>
+                    <div class="timer-time" id="timerValue">25:00</div>
+                    <div class="timer-progress" aria-hidden="true">
+                        <div class="fill" id="timerFill"></div>
+                    </div>
+                    <div class="timer-status" id="timerStatus">Pronto para começar</div>
+                    <div class="timer-controls">
+                        <button class="btn btn-primary" id="timerToggle">Iniciar</button>
+                        <button class="btn btn-ghost" id="timerReset">Resetar</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <span class="tag">Método</span>
+                    <h3>Customizar sessão</h3>
+                    <p class="subtitle small">Selecione o bloco de tempo ideal e sincronize com as trilhas em reprodução.</p>
+                    <div class="mode-group" role="group" aria-label="Modos de pomodoro">
+                        <button class="mode-btn active" data-minutes="25" data-label="Foco">Foco 25'</button>
+                        <button class="mode-btn" data-minutes="45" data-label="Foco profundo">Foco 45'</button>
+                        <button class="mode-btn" data-minutes="15" data-label="Pausa ativa">Pausa 15'</button>
+                        <button class="mode-btn" data-minutes="5" data-label="Micro pausa">Pausa 5'</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Monitoramento rápido</h2>
+            <div class="grid">
+                <div class="card">
+                    <span class="tag">Sessão</span>
+                    <h3>Timer inteligente</h3>
+                    <p class="subtitle">Selecione 25 ou 45 minutos para seguir o método Pomodoro sem sair do fluxo.</p>
+                </div>
+                <div class="card">
+                    <span class="tag">Respire</span>
+                    <h3>Frequência cardíaca</h3>
+                    <p class="subtitle">Use o ritmo da faixa para sincronizar sua respiração e reduzir a ansiedade.</p>
+                </div>
+                <div class="card">
+                    <span class="tag">Ambiente</span>
+                    <h3>Modo imersivo</h3>
+                    <p class="subtitle">Combine com fones ou caixa de som; o site bloqueia notificações sonoras.</p>
+                </div>
+            </div>
+        </section>
+
+        <div class="now-playing" id="nowPlaying">
+            <div class="indicator" id="playingIndicator"></div>
+            <div class="np-text">
+                <div class="np-label">Agora tocando</div>
+                <div id="npTitle">Escolha uma faixa para começar</div>
+                <div id="npMeta" class="subtitle">Nenhuma reprodução ativa.</div>
+            </div>
+        </div>
+
+        <footer>
+            Projeto experimental inspirado no brain.fm. Todos os áudios estão na pasta <code>audios</code>.
+        </footer>
     </div>
 
-    <!-- Você pode duplicar este bloco para cada arquivo -->
-</body>
+    <script>
+        const cards = Array.from(document.querySelectorAll('.card[data-src]'));
+        const buttons = document.querySelectorAll('.play-btn');
+        const indicator = document.getElementById('playingIndicator');
+        const npTitle = document.getElementById('npTitle');
+        const npMeta = document.getElementById('npMeta');
+        const focusSession = document.getElementById('focusSession');
+        const autoPlaylist = document.getElementById('autoPlaylist');
+        const timerLabel = document.getElementById('timerLabel');
+        const timerValue = document.getElementById('timerValue');
+        const timerStatus = document.getElementById('timerStatus');
+        const timerToggle = document.getElementById('timerToggle');
+        const timerReset = document.getElementById('timerReset');
+        const modeButtons = document.querySelectorAll('.mode-btn');
+        const timerFill = document.getElementById('timerFill');
 
+        let currentAudio = null;
+        let timerInterval = null;
+        let timerRemaining = 25 * 60;
+        let timerTotal = 25 * 60;
+        let timerRunning = false;
+
+        function formatTime(seconds) {
+            const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+            const s = String(seconds % 60).padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        function updateProgress() {
+            const elapsed = Math.max(timerTotal - timerRemaining, 0);
+            const percent = timerTotal > 0 ? Math.min((elapsed / timerTotal) * 100, 100) : 0;
+            timerFill.style.width = `${percent}%`;
+        }
+
+        function updateTimerDisplay(statusText) {
+            timerValue.textContent = formatTime(timerRemaining);
+            if (statusText) timerStatus.textContent = statusText;
+            updateProgress();
+        }
+
+        function setMode(minutes, label) {
+            timerTotal = minutes * 60;
+            timerRemaining = timerTotal;
+            timerLabel.textContent = label;
+            updateTimerDisplay('Pronto para começar');
+            timerToggle.textContent = 'Iniciar';
+            timerRunning = false;
+            clearInterval(timerInterval);
+        }
+
+        function stopCurrent() {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio.closest('.card').querySelector('.play-btn').textContent = '▶';
+            }
+        }
+
+        function playCard(card) {
+            const src = card.dataset.src;
+            const title = card.dataset.title;
+            const mood = card.dataset.mood;
+            const duration = card.dataset.duration;
+            let audio = card.querySelector('audio');
+
+            if (!audio) {
+                audio = document.createElement('audio');
+                audio.src = src;
+                audio.preload = 'auto';
+                card.appendChild(audio);
+            }
+
+            const playBtn = card.querySelector('.play-btn');
+
+            if (currentAudio === audio && !audio.paused) {
+                audio.pause();
+                playBtn.textContent = '▶';
+                indicator.classList.remove('active');
+                npTitle.textContent = 'Reprodução pausada';
+                npMeta.textContent = `${title} (${mood})`;
+                return;
+            }
+
+            stopCurrent();
+            currentAudio = audio;
+            audio.play();
+            playBtn.textContent = '❚❚';
+            indicator.classList.add('active');
+            npTitle.textContent = title;
+            npMeta.textContent = `${mood} • ${duration}`;
+
+            audio.onended = () => {
+                playBtn.textContent = '▶';
+                indicator.classList.remove('active');
+                npTitle.textContent = 'Escolha uma faixa para começar';
+                npMeta.textContent = 'Nenhuma reprodução ativa.';
+            };
+        }
+
+        buttons.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const card = btn.closest('.card');
+                playCard(card);
+            });
+        });
+
+        focusSession.addEventListener('click', () => {
+            const deepFocus = cards.find((c) => c.dataset.mood === 'Foco profundo');
+            if (deepFocus) {
+                playCard(deepFocus);
+            }
+        });
+
+        autoPlaylist.addEventListener('click', () => {
+            let index = 0;
+            const next = () => {
+                playCard(cards[index]);
+                cards[index].querySelector('audio').onended = () => {
+                    index = (index + 1) % cards.length;
+                    next();
+                };
+            };
+            next();
+        });
+
+        modeButtons.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                modeButtons.forEach((b) => b.classList.remove('active'));
+                btn.classList.add('active');
+                const minutes = Number(btn.dataset.minutes);
+                const label = btn.dataset.label;
+                setMode(minutes, label);
+            });
+        });
+
+        timerToggle.addEventListener('click', () => {
+            if (timerRunning) {
+                clearInterval(timerInterval);
+                timerRunning = false;
+                timerToggle.textContent = 'Retomar';
+                updateTimerDisplay('Pausado');
+                return;
+            }
+
+            if (timerRemaining <= 0) {
+                const active = document.querySelector('.mode-btn.active');
+                setMode(Number(active.dataset.minutes), active.dataset.label);
+            }
+
+            timerRunning = true;
+            timerToggle.textContent = 'Pausar';
+            timerStatus.textContent = 'Em progresso';
+            updateProgress();
+            timerInterval = setInterval(() => {
+                timerRemaining -= 1;
+                if (timerRemaining <= 0) {
+                    clearInterval(timerInterval);
+                    timerRemaining = 0;
+                    timerRunning = false;
+                    timerToggle.textContent = 'Reiniciar';
+                    updateTimerDisplay('Tempo encerrado — faça uma pausa!');
+                    timerFill.style.width = '100%';
+                    return;
+                }
+                updateTimerDisplay();
+            }, 1000);
+        });
+
+        timerReset.addEventListener('click', () => {
+            const active = document.querySelector('.mode-btn.active');
+            const minutes = Number(active.dataset.minutes);
+            const label = active.dataset.label;
+            setMode(minutes, label);
+        });
+
+        const activeStart = document.querySelector('.mode-btn.active');
+        if (activeStart) {
+            setMode(Number(activeStart.dataset.minutes), activeStart.dataset.label);
+        }
+    </script>
+</body>
 </html>
